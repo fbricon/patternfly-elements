@@ -1,4 +1,5 @@
 import PFElement from "../../pfelement/dist/pfelement.js";
+import PfeAccordion from "../../pfe-accordion/dist/pfe-accordion.js";
 
 const pfeJumpLinksNavObserverConfig = {
   childList: true,
@@ -91,12 +92,17 @@ class PfeJumpLinksNav extends PFElement {
   constructor() {
     super(PfeJumpLinksNav, { type: PfeJumpLinksNav.PfeType });
     this._buildNav = this._buildNav.bind(this);
-    this._mutationCallback = this._mutationCallback.bind(this);
-    this._menuContainer = this.shadowRoot.querySelector("#container");
-    this._observer = new MutationObserver(this._mutationCallback);
+    this._init = this._init.bind(this);
     this._reportHeight = this._reportHeight.bind(this);
     this.closeAccordion = this.closeAccordion.bind(this);
     this._closeAccordion = this._closeAccordion.bind(this);
+
+    this._observer = new MutationObserver(this._init);
+
+    this._nav = this.shadowRoot.querySelector("nav");
+    this._mobileHeader = this.shadowRoot.querySelector("pfe-accordion-header");
+    this._accordion = this.shadowRoot.querySelector("pfe-accordion");
+    this._container = this.shadowRoot.querySelector("#container");
 
     window.addEventListener("resize", () => {});
   }
@@ -105,59 +111,48 @@ class PfeJumpLinksNav extends PFElement {
     super.connectedCallback();
     this.panel = document.querySelector(`[scrolltarget=${this.id}]`);
 
-    //Check that the light DOM is there
-    if (this.autobuild) {
-      this._buildNav();
-    } else {
-      //Check that the light DOM is valid
-      if (this._isValidLightDom()) {
-        const menu = this.querySelector("ul");
-        menu.classList.add("pfe-jump-links-nav");
-        this._menuContainer.innerHTML = menu.outerHTML;
-
-        let div = document.createElement("div");
-
-        div.innerHTML = `<h2 class="sr-only" hidden>${this.srText}</h2>`;
-
-        if (this.srText) {
-          this.shadowRoot.querySelector("nav").prepend(div);
-        }
-
-        let html = "";
-        if (this.querySelector("[slot='pfe-jump-links-nav--heading']")) {
-          html = this.querySelector("[slot='pfe-jump-links-nav--heading']").cloneNode(true);
-        }
-        if (!this.horizontal && html !== "") {
-          this.shadowRoot.querySelector("pfe-accordion-header").appendChild(html);
-        } else {
-          const heading = document.createElement("h3");
-          heading.id = "pfe-jump-links-nav--heading";
-
-          this.shadowRoot.querySelector("pfe-accordion-header").appendChild(heading);
-          this.shadowRoot.querySelector("#pfe-jump-links-nav--heading").innerHTML = "Jump to section";
-        }
-      }
-    }
-    this._reportHeight();
+    this._init();
 
     this._observer.observe(this, pfeJumpLinksNavObserverConfig);
 
     this.panel = document.querySelector(`[scrolltarget="${this.id}"]`);
 
-    this.panel.addEventListener(PfeJumpLinksPanel.events.change, this._buildNav);
+    if (this.panel) this.panel.addEventListener(PfeJumpLinksPanel.events.change, this._buildNav);
 
-    this.accordion = this.shadowRoot.querySelector("pfe-accordion");
     this.links = this.shadowRoot.querySelectorAll("a");
     [...this.links].forEach(link => {
       link.addEventListener("click", this.closeAccordion);
     });
   }
 
+  _init() {
+    if (window.ShadyCSS) this._observer.disconnect();
+
+    if (this.autobuild) {
+      this._buildNav();
+    } else {
+      //Check that the light DOM is valid
+      if (this._isValidLightDom()) {
+        const menu = this.querySelector("ul");
+        if (menu) {
+          menu.classList.add(this.tag);
+          this._container.innerHTML = menu.outerHTML;
+        }
+
+        this._copyHeader();
+      }
+    }
+
+    this._reportHeight();
+
+    if (window.ShadyCSS) this._observer.observe(this, pfeJumpLinksNavObserverConfig);
+  }
+
   disconnectedCallback() {
     super.disconnectedCallback();
 
     this._observer.disconnect();
-    this.panel.removeEventListener(PfeJumpLinksPanel.events.change, this._buildNav);
+    if (this.panel) this.panel.removeEventListener(PfeJumpLinksPanel.events.change, this._buildNav);
     this.removeEventListener("click");
     [...this.links].forEach(link => {
       link.removeEventListener("click", this.closeAccordion);
@@ -174,7 +169,7 @@ class PfeJumpLinksNav extends PFElement {
   }
 
   _closeAccordion() {
-    this.shadowRoot.querySelector("pfe-accordion").collapseAll();
+    this.shadowRoot.querySelector(PfeAccordion.tag).collapseAll();
   }
 
   _rebuildNav() {
@@ -234,37 +229,24 @@ class PfeJumpLinksNav extends PFElement {
       return linkList;
     };
 
-    let html = `
-      <ul class="pfe-jump-links-nav">
-        ${buildLinkList()}
-      </ul>
-    `;
-    this.shadowRoot.querySelector("#container").innerHTML = html;
-    let heading = document.createElement("h3");
-    heading.innerHTML = "Jump to section";
-    this.shadowRoot.querySelector("pfe-accordion-header").appendChild(heading);
+    this._container.innerHTML = `<ul class="pfe-jump-links-nav">${buildLinkList()}</ul>`;
+
+    this._copyHeader();
   }
 
-  _mutationCallback() {
-    if (window.ShadyCSS) {
-      this._observer.disconnect();
-    }
+  _copyHeader() {
+    // Capture the default heading from the shadow DOM
+    let label = this.shadowRoot.querySelector("#heading > *:first-child");
 
-    if (!this.autobuild) {
-      const menu = this.querySelector("ul");
-      this._menuContainer.innerHTML = menu.outerHTML;
-
-      this.links = this.shadowRoot.querySelectorAll("a");
-      [...this.links].forEach(link => {
-        link.addEventListener("click", this.closeAccordion);
-      });
-    } else if (this.autobuild) {
-      this._buildNav();
+    // If a heading slot has been used, copy the content into the template
+    if (this.hasSlot(`${this.tag}--heading`)) {
+      let heading = this.getSlot(`${this.tag}--heading`)[0];
+      if (heading) {
+        label = heading.cloneNode(true);
+        label.removeAttribute("slot");
+      }
     }
-
-    if (window.ShadyCSS) {
-      this._observer.observe(this, pfeJumpLinksNavObserverConfig);
-    }
+    if (!this.horizontal && label) this._mobileHeader.appendChild(label);
   }
 
   _isValidLightDom() {
@@ -287,14 +269,19 @@ class PfeJumpLinksNav extends PFElement {
   }
 
   _reportHeight() {
-    const cssVarName = `--${this.tag}--Height--actual`;
+    const cssVarName = `--pfe-jump-links--Height--actual`;
     const styles = window.getComputedStyle(this);
 
-    let height = styles.getPropertyValue("height");
+    let navHeight = Number.parseInt(styles.getPropertyValue("height")) || 0;
+    let nudge = Number.parseInt(this.cssVariable("jump-links-nav--nudge")) || 0;
+
     if (window.matchMedia("(min-width: 992px)").matches) {
-      height = "0px";
+      navHeight = 0;
     }
-    this.panel.style.setProperty(cssVarName, height);
+
+    let offset = navHeight + nudge;
+
+    if (this.panel) this.panel.style.setProperty(cssVarName, offset);
   }
 }
 
@@ -322,27 +309,6 @@ class PfeJumpLinksPanel extends PFElement {
     };
   }
 
-  get customVar() {
-    let offset = this.cssVariable(`${this.tag}--offset`) || this.cssVariable("--pfe-navigation--Height--actual");
-    if (offset) {
-      if (offset.slice(-2) !== "px" && offset != Number.parseInt(offset, 10)) {
-        this.warn(`Value "${offset}" contains a unit (other than px) and is not supported for --${this.tag}--offset.`);
-      } else {
-        return Number.parseInt(offset, 10);
-      }
-    }
-
-    return 200;
-  }
-
-  set customVar(value) {
-    this.cssVariable(`${this.tag}--offset`, value);
-  }
-
-  get offsetValue() {
-    return this.sectionMargin || this.customVar;
-  }
-
   static get PfeType() {
     return PFElement.PfeTypes.Content;
   }
@@ -351,8 +317,7 @@ class PfeJumpLinksPanel extends PFElement {
     return {
       offset: {
         title: "Offset",
-        type: Number,
-        observer: "_offsetChanged"
+        type: Number
       },
       scrolltarget: {
         title: "Scroll target",
@@ -361,15 +326,38 @@ class PfeJumpLinksPanel extends PFElement {
     };
   }
 
+  // -- This getter looks for the CSS variable `--pfe-jump-links--offset` or `--pfe-navigation--Height--actual`
+  get offsetValue() {
+    if (this.offset) return this.offset;
+
+    let cssvariable =
+      this.cssVariable(`pfe-jump-links--offset`) || this.cssVariable("--pfe-navigation--Height--actual");
+    // If a variable is found
+    if (cssvariable) {
+      // If it's not a pixel value or a raw number value, throw a warning (returns with default of 200 in this case)
+      if (cssvariable.slice(-2) !== "px" && cssvariable != Number.parseInt(cssvariable, 10)) {
+        this.warn(
+          `Value "${cssvariable}" contains a unit (other than px) and is not supported for --${this.tag}--offset.`
+        );
+      } else {
+        // If the value is a pixel or a number value, return it
+        return Number.parseInt(cssvariable, 10);
+      }
+    }
+
+    // If no variables were found, default to 200
+    return 200;
+  }
+
   constructor() {
     super(PfeJumpLinksPanel, { type: PfeJumpLinksPanel.PfeType });
     this._init = this._init.bind(this);
     this._slot = this.shadowRoot.querySelector("slot");
     this._slot.addEventListener("slotchange", this._init);
     this._scrollCallback = this._scrollCallback.bind(this);
-    this._mutationCallback = this._mutationCallback.bind(this);
     this._handleResize = this._handleResize.bind(this);
     this._makeSpacers = this._makeSpacers.bind(this);
+    this._mutationCallback = this._mutationCallback.bind(this);
     this._observer = new MutationObserver(this._mutationCallback);
     this.currentActive = null;
     this._isValidMarkup = this._isValidMarkup.bind(this);
@@ -382,7 +370,6 @@ class PfeJumpLinksPanel extends PFElement {
     this._isValidMarkup();
     this.nav = this._getNav();
     this._init();
-    this.sectionMargin = this.offset;
     if (this.nav && this.nav.autobuild) {
       this.nav._rebuildNav();
     }
@@ -397,10 +384,6 @@ class PfeJumpLinksPanel extends PFElement {
     window.removeEventListener("scroll");
     this._slot.removeEventListener("slotchange", this._init);
     window.removeEventListener("resize", this._handleResize);
-  }
-
-  _offsetChanged(oldVal, newVal) {
-    this.sectionMargin = newVal;
   }
 
   _isValidMarkup() {
@@ -440,7 +423,6 @@ class PfeJumpLinksPanel extends PFElement {
 
   _handleResize() {
     this.nav._reportHeight();
-    this.sectionMargin = this.offset;
   }
 
   _getNav() {
