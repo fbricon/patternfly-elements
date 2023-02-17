@@ -13,7 +13,7 @@ jobs:
     name: Auto-update open PRs
     runs-on: ubuntu-latest
     steps:
-      - uses: chinthakagodawita/autoupdate-action@v0.1.4
+      - uses: chinthakagodawita/autoupdate-action@699da47083dddb66e5f5d2d48825b2e375a1d6c3 #v0.1.4
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MERGE_MSG: "Branch was auto-updated with the latest."
