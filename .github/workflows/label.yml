@@ -37,7 +37,7 @@ jobs:
           github.event.review.state == 'approved' &&          
           github.event.check_suite.status == 'completed' &&
           github.event.check_suite.conclusion == 'success'
-        uses: actions-ecosystem/action-add-labels@v1
+        uses: actions-ecosystem/action-add-labels@18f1af5e3544586314bbe15c0273249c770b2daf #v1
         with:
           github_token: ${{ env.TOKEN }}
           labels: ready to merge
@@ -49,7 +49,7 @@ jobs:
     steps:
       - name: Flag work in progress
         if: github.event.pull_request.draft == true
-        uses: actions-ecosystem/action-add-labels@v1
+        uses: actions-ecosystem/action-add-labels@18f1af5e3544586314bbe15c0273249c770b2daf #v1
         with:
           github_token: ${{ env.TOKEN }}
           labels: work in progress
