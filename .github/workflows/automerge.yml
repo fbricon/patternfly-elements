@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for tests to succeed
-        uses: fountainhead/action-wait-for-check@v1.0.0
+        uses: fountainhead/action-wait-for-check@4699210ccc66e2a13260803fadbb77085421b891 #v1.0.0
         id: wait-for-tests
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
