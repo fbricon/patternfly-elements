@@ -155,13 +155,13 @@ jobs:
         node: [10]
     steps:
       - name: BrowserStack environment setup
-        uses: "browserstack/github-actions/setup-env@master"
+        uses: "browserstack/github-actions/setup-env@00ce173eae311a7838f80682a5fad5144c4219ad #master"
         with:
           username: ${{ secrets.BROWSERSTACK_USER }}
           access-key: ${{ secrets.BROWSERSTACK_KEY }}
 
       - name: Start BrowserStackLocal
-        uses: browserstack/github-actions/setup-local@master
+        uses: browserstack/github-actions/setup-local@00ce173eae311a7838f80682a5fad5144c4219ad #master
         with:
           local-testing: start
           local-identifier: random
@@ -219,6 +219,6 @@ jobs:
 
       - name: Stop BrowserStackLocal
         if: always()
-        uses: browserstack/github-actions/setup-local@master
+        uses: browserstack/github-actions/setup-local@00ce173eae311a7838f80682a5fad5144c4219ad #master
         with:
           local-testing: stop
