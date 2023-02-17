@@ -20,32 +20,32 @@ jobs:
     if: contains(github.event.*.state, 'open')
     steps:
       - name: Move to backlog
-        uses: takanabe/github-actions-automate-projects@v0.0.1
+        uses: takanabe/github-actions-automate-projects@150a339e20050890efd49d37696fee9f21657459 #v0.0.1
         if: contains(github.event.*.labels.*.name, 'discovery')
         env:
           GITHUB_PROJECT_COLUMN_NAME: Backlog
       - name: Move to hold
-        uses: takanabe/github-actions-automate-projects@v0.0.1
+        uses: takanabe/github-actions-automate-projects@150a339e20050890efd49d37696fee9f21657459 #v0.0.1
         if: |
           contains(github.event.*.labels.*.name, 'blocked') ||
           contains(github.event.*.labels.*.name, 'on hold')
         env:
           GITHUB_PROJECT_COLUMN_NAME: On hold
       - name: Ready for code review
-        uses: takanabe/github-actions-automate-projects@v0.0.1
+        uses: takanabe/github-actions-automate-projects@150a339e20050890efd49d37696fee9f21657459 #v0.0.1
         if: |
           contains(github.event.*.labels.*.name, 'needs: code review')
         env:
           GITHUB_PROJECT_COLUMN_NAME: Code review
       - name: Move to testing
-        uses: takanabe/github-actions-automate-projects@v0.0.1
+        uses: takanabe/github-actions-automate-projects@150a339e20050890efd49d37696fee9f21657459 #v0.0.1
         if: |
           contains(github.event.*.labels.*.name, 'needs: browser testing') ||
           contains(github.event.*.labels.*.name, 'needs: branch testing')
         env:
           GITHUB_PROJECT_COLUMN_NAME: Testing
       - name: Ready to merge
-        uses: takanabe/github-actions-automate-projects@v0.0.1
+        uses: takanabe/github-actions-automate-projects@150a339e20050890efd49d37696fee9f21657459 #v0.0.1
         if: contains(github.event.*.labels.*.name, 'ready for merge')
         env:
           GITHUB_PROJECT_COLUMN_NAME: Ready for merge?
